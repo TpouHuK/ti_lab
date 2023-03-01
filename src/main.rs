@@ -4,7 +4,8 @@ use rotating_grille::*;
 mod vigener_progressive;
 use vigener_progressive::*;
 
-use egui_dock::{NodeIndex, Tree};
+use egui_dock::Tree;
+use itertools::Itertools;
 
 #[derive(Debug)]
 enum EncryptTab {
@@ -13,16 +14,23 @@ enum EncryptTab {
         output_text: String,
         key: String,
     },
-    Grille{},
+    Grille {
+        input_text: String,
+        output_text: String,
+        key: CardboardMatrix,
+    },
 }
 
 struct TabViewer {}
 impl egui_dock::TabViewer for TabViewer {
     type Tab = EncryptTab;
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        ui.label(format!("Content of {tab:?}"));
         match tab {
-            EncryptTab::Vigener { input_text, output_text, key } => {
+            EncryptTab::Vigener {
+                input_text,
+                output_text,
+                key,
+            } => {
                 ui.horizontal(|ui| {
                     ui.label("Ключ: ");
                     ui.text_edit_singleline(key);
@@ -32,47 +40,106 @@ impl egui_dock::TabViewer for TabViewer {
                     column[0].text_edit_multiline(input_text);
                     if column[0].button("Получить открытый текст").clicked() {
                         let vig = VigenerProgressive::new(key);
-                        if let Some(vig) = vig{
+                        if let Some(vig) = vig {
                             *input_text = vig.decrypt(output_text);
                         }
                     }
 
                     column[1].text_edit_multiline(output_text);
-                    if column[1].button("Получить зашифрованный текст").clicked() {
+                    if column[1].button("Получить зашифрованный текст").clicked()
+                    {
                         let vig = VigenerProgressive::new(key);
-                        if let Some(vig) = vig{
+                        if let Some(vig) = vig {
                             *output_text = vig.encrypt(input_text);
                         }
                     }
                 })
             }
-            EncryptTab::Grille {} => {
+            EncryptTab::Grille {
+                input_text,
+                output_text,
+                key,
+            } => {
+                //.chunks(4).map(|row| row.collect());
+                if ui.button("Получить открытый текст").clicked() {
+                    let grille = Grille::new(*key);
+                    let grid = output_text
+                        .chars()
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .map(|c| c.to_ascii_uppercase())
+                        .chunks(4)
+                        .into_iter()
+                        .map(|row| row.collect::<Vec<_>>())
+                        .collect::<Vec<Vec<_>>>();
 
+                    if let Ok(rows) = dbg!(grid)
+                        .into_iter()
+                        .map(|row| row.try_into())
+                        .collect::<Result<Vec<[char; 4]>, _>>()
+                    {
+                        if let Ok(grid) = (rows).try_into() {
+                            *input_text = grille.decrypt(grid);
+                        }
+                    }
+                }
+                ui.label("Открытый текст");
+                ui.text_edit_singleline(input_text);
+                ui.columns(2, |column| {
+                    column[0].label("Ключ");
+                    egui::Grid::new("key").show(&mut column[0], |ui| {
+                        for i in 0..4 {
+                            for j in 0..4 {
+                                ui.add(egui::Checkbox::without_text(&mut key[i][j]));
+                            }
+                            ui.end_row();
+                        }
+                    });
+
+                    if column[1].button("Получить зашифрованный текст").clicked()
+                    {
+                        let grille = Grille::new(*key);
+                        let encrypted = grille.encrypt(input_text);
+                        *output_text = encrypted
+                            .map(|line| {
+                                line.iter()
+                                    .map(|c| c.to_string())
+                                    .collect::<Vec<_>>()
+                                    .join(" ")
+                            })
+                            .join("\n");
+                    }
+                    column[1].label("Зашифрованный текст");
+                    column[1].text_edit_multiline(output_text);
+                });
             }
         }
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         match tab {
-            EncryptTab::Vigener {..} => {
-                "Vigener".into()
-            }
-            EncryptTab::Grille {..} => {
-                "Grille".into()
-            }
+            EncryptTab::Vigener { .. } => "Vigener".into(),
+            EncryptTab::Grille { .. } => "Grille".into(),
         }
     }
 }
 
 #[derive(Default)]
 struct MyTabs {
-    tree: Tree<EncryptTab>
+    tree: Tree<EncryptTab>,
 }
 
 impl MyTabs {
     pub fn new() -> Self {
-        let tab1 = EncryptTab::Grille{};
-        let tab2 = EncryptTab::Vigener { input_text: String::new(), output_text: String::new(), key: String::new()};
+        let tab1 = EncryptTab::Grille {
+            input_text: String::new(),
+            output_text: String::new(),
+            key: [[false; 4]; 4],
+        };
+        let tab2 = EncryptTab::Vigener {
+            input_text: String::new(),
+            output_text: String::new(),
+            key: String::new(),
+        };
 
         let tree = Tree::new(vec![tab1, tab2]);
         Self { tree }
@@ -115,7 +182,7 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.set_pixels_per_point(1.5);
+        ctx.set_pixels_per_point(2.5);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             self.tabs.ui(ui);

@@ -4,7 +4,7 @@ use rand::{self, Rng};
 use std::fmt::Debug;
 
 pub type CardboardMatrix = [[bool; 4]; 4];
-type CharMatrix = [[char; 4]; 4];
+pub type CharMatrix = [[char; 4]; 4];
 
 pub struct Grille {
     matrix: CardboardMatrix,
@@ -34,7 +34,7 @@ impl Grille {
     }
 
     pub fn encrypt(&self, text: &str) -> CharMatrix {
-        let mut char_matrix: CharMatrix = Default::default();
+        let mut char_matrix: CharMatrix = [['-'; 4]; 4];
         let mut cardboard_cutout = self.matrix;
         let mut text_iter = text.chars().filter_map(|c| {
             if c.is_ascii_alphabetic() {

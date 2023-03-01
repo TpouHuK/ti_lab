@@ -19,20 +19,21 @@ trait Rot {
     fn from_ru_u32(value: u32) -> Self;
 }
 
-const ALPHABET_SIZE: u32 = 33;
+const ALPHABET: [char; 33] = [
+    'А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С',
+    'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я',
+];
 
 impl Rot for char {
     fn rot(self, num: u32) -> Self {
-        Self::from_ru_u32(
-            'А' as u32 + (self.as_ru_u32() + num % ALPHABET_SIZE) % ALPHABET_SIZE
-            )
+        Self::from_ru_u32((self.as_ru_u32() + num) % ALPHABET.len() as u32)
     }
 
     fn as_ru_u32(&self) -> u32 {
         if ('А'..='Е').contains(self) {
             *self as u32 - 'А' as u32
-        } else  if *self == 'Ё' {
-            'Е' as u32 + 1
+        } else if *self == 'Ё' {
+            dbg!('Е'.as_ru_u32() + 1)
         } else if ('Ж'..='Я').contains(self) {
             *self as u32 - 'А' as u32 + 1
         } else {
@@ -41,14 +42,7 @@ impl Rot for char {
     }
 
     fn from_ru_u32(value: u32) -> Self {
-        let value = value & ALPHABET_SIZE;
-        if ('А'.as_ru_u32()..='Е'.as_ru_u32()).contains(&value) {
-            char::from_u32((value)).unwrap()
-        } else if 'Ё'.as_ru_u32() == value{
-            'Ё'
-        } else {
-            char::from_u32((value + 1)).unwrap()
-        }
+        ALPHABET[value as usize]
     }
 }
 
@@ -60,9 +54,7 @@ impl VigenerProgressive {
             return None;
         }
 
-        Some(VigenerProgressive {
-            key,
-        })
+        Some(VigenerProgressive { key })
     }
 
     pub fn encrypt(&self, text: &str) -> String {
@@ -103,7 +95,7 @@ impl VigenerProgressive {
                     *key_iter.next().unwrap()
                 }
             };
-            text.push(char.rot(ALPHABET_SIZE - key_num));
+            text.push(char.rot(ALPHABET.len() as u32 - key_num));
         }
         text
     }
