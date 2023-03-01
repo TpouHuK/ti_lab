@@ -1,0 +1,12 @@
+[package]
+name = "rotating_net"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.21.3"
+egui = "0.21.0"
+egui_dock = "0.4.0"
+rand = "0.8.5"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
