@@ -77,7 +77,10 @@ impl egui_dock::TabViewer for TabViewer {
 
                 ui.columns(2, |column| {
                     column[0].text_edit_multiline(input_text);
-                    if column[0].add_enabled(right_key, egui::Button::new("Получить открытый текст")).clicked() {
+                    if column[0]
+                        .add_enabled(right_key, egui::Button::new("Получить открытый текст"))
+                        .clicked()
+                    {
                         let vig = VigenerProgressive::new(key);
                         if let Some(vig) = vig {
                             *input_text = vig.decrypt(output_text);
@@ -103,7 +106,9 @@ impl egui_dock::TabViewer for TabViewer {
                     }
 
                     column[1].text_edit_multiline(output_text);
-                    if column[1].add_enabled(right_key, egui::Button::new("Получить зашифрованный текст")).clicked()
+                    if column[1]
+                        .add_enabled(right_key, egui::Button::new("Получить зашифрованный текст"))
+                        .clicked()
                     {
                         let vig = VigenerProgressive::new(key);
                         if let Some(vig) = vig {
@@ -160,9 +165,12 @@ impl egui_dock::TabViewer for TabViewer {
                     std::fs::write(path, &input_text);
                 }
 
-                let right_key = key.iter().flatten().filter(|t|**t).count() == 4;
+                let right_key = key.iter().flatten().filter(|t| **t).count() == 4;
                 //.chunks(4).map(|row| row.collect());
-                if ui.add_enabled(right_key, egui::Button::new("Получить открытый текст")).clicked() {
+                if ui
+                    .add_enabled(right_key, egui::Button::new("Получить открытый текст"))
+                    .clicked()
+                {
                     let grille = Grille::new(*key);
                     let mut chars = output_text
                         .chars()
@@ -217,17 +225,21 @@ impl egui_dock::TabViewer for TabViewer {
                         for i in 0..4 {
                             for j in 0..4 {
                                 let mut is_enabled = true;
-                                if (a[i][j] || b[i][j] || c[i][j] || d[i][j]) && !(key[i][j]){
+                                if (a[i][j] || b[i][j] || c[i][j] || d[i][j]) && !(key[i][j]) {
                                     is_enabled = false;
                                 }
-                                ui.add_enabled(is_enabled, egui::Checkbox::without_text(&mut key[i][j]));
+                                ui.add_enabled(
+                                    is_enabled,
+                                    egui::Checkbox::without_text(&mut key[i][j]),
+                                );
                             }
                             ui.end_row();
                         }
                     });
 
-
-                    if column[1].add_enabled(right_key, egui::Button::new("Получить зашифрованный текст")).clicked()
+                    if column[1]
+                        .add_enabled(right_key, egui::Button::new("Получить зашифрованный текст"))
+                        .clicked()
                     {
                         let grille = Grille::new(*key);
                         let mut out = String::new();
@@ -250,7 +262,7 @@ impl egui_dock::TabViewer for TabViewer {
                                     })
                                     .join("\n"),
                             );
-                            out.push('\n');
+                            out.push_str("\n\n");
                         }
                         *output_text = out;
                     }
