@@ -80,14 +80,14 @@ impl VigenerProgressive {
 
         for char in input {
             let key_num = match key_iter.next() {
-                Some(num) => num + cycle_num,
+                Some(num) => num,
                 None => {
                     cycle_num += 1;
                     key_iter = self.key.iter();
-                    *key_iter.next().unwrap()
+                    key_iter.next().unwrap()
                 }
             };
-            text.push(rot(char, ALPHABET.len() as u32 - key_num));
+            text.push(rot(char, ALPHABET.len() as u32 - (key_num + cycle_num)));
         }
         text
     }
