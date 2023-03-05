@@ -2,7 +2,7 @@ pub struct VigenerProgressive {
     key: Vec<u32>,
 }
 
-fn filter_russian<I: Iterator<Item = char>>(inp: I) -> impl Iterator<Item = char> {
+pub fn filter_russian<I: Iterator<Item = char>>(inp: I) -> impl Iterator<Item = char> {
     inp.filter_map(|c| {
         let c = c.to_uppercase().next().unwrap();
         if ('А'..='Я').contains(&c) || ('Ё' == c) {
