@@ -70,7 +70,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = output_file_write_path_dialog.check() {
-                    std::fs::write(path, &input_text);
+                    std::fs::write(path, &output_text);
                 }
 
                 let right_key = filter_russian(key.chars()).count() > 0;
@@ -162,7 +162,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = output_file_write_path_dialog.check() {
-                    std::fs::write(path, &input_text);
+                    std::fs::write(path, &output_text);
                 }
 
                 let right_key = key.iter().flatten().filter(|t| **t).count() == 4;
