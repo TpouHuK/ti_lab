@@ -87,7 +87,7 @@ impl VigenerProgressive {
                     key_iter.next().unwrap()
                 }
             };
-            text.push(rot(char, ALPHABET.len() as u32 - (key_num + cycle_num)));
+            text.push(rot(char, ALPHABET.len() as u32 - (key_num + cycle_num) % ALPHABET.len() as u32));
         }
         text
     }
