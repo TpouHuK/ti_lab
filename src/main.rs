@@ -1,5 +1,5 @@
 mod rotating_grille;
-use egui::{Mesh, Vec2, vec2};
+use egui::{vec2, Mesh, Vec2};
 use rotating_grille::*;
 
 mod vigener_progressive;
@@ -77,63 +77,61 @@ impl egui_dock::TabViewer for TabViewer {
                 let right_key = filter_russian(key.chars()).count() > 0;
 
                 ui.columns(2, |column| {
-                    column[0].text_edit_multiline(input_text);
-                    if column[0]
-                        .add_enabled(right_key, egui::Button::new("Получить открытый текст"))
-                        .clicked()
-                    {
-                        let vig = VigenerProgressive::new(key);
-                        if let Some(vig) = vig {
-                            *input_text = vig.decrypt(output_text);
+                    column[0].group(|ui| {
+                        ui.label("Открытый текст");
+                        ui.text_edit_multiline(input_text);
+                        if ui
+                            .add_enabled(right_key, egui::Button::new("Получить (расшифровать)"))
+                            .clicked()
+                        {
+                            let vig = VigenerProgressive::new(key);
+                            if let Some(vig) = vig {
+                                *input_text = vig.decrypt(output_text);
+                            }
                         }
-                    }
 
-                    if column[0]
-                        .button("Загрузить открытый текст из файла")
-                        .clicked()
-                    {
-                        input_file_read_path_dialog
-                            .open_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                        ui.horizontal(|ui| {
+                            if ui.button("Загрузить...").clicked() {
+                                input_file_read_path_dialog
+                                    .open_single_file(None)
+                                    .expect("Unable to open file_path dialog");
+                            }
 
-                    if column[0]
-                        .button("Сохранить открытый текст в файл")
-                        .clicked()
-                    {
-                        input_file_write_path_dialog
-                            .show_save_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                            if ui.button("Сохранить...").clicked() {
+                                input_file_write_path_dialog
+                                    .show_save_single_file(None)
+                                    .expect("Unable to open file_path dialog");
+                            }
+                        });
+                    });
 
-                    column[1].text_edit_multiline(output_text);
-                    if column[1]
-                        .add_enabled(right_key, egui::Button::new("Получить зашифрованный текст"))
-                        .clicked()
-                    {
-                        let vig = VigenerProgressive::new(key);
-                        if let Some(vig) = vig {
-                            *output_text = vig.encrypt(input_text);
+                    column[1].group(|ui| {
+                        ui.label("Зашифрованный текст");
+                        ui.text_edit_multiline(output_text);
+                        if ui
+                            .add_enabled(right_key, egui::Button::new("Получить (зашифровать)"))
+                            .clicked()
+                        {
+                            let vig = VigenerProgressive::new(key);
+                            if let Some(vig) = vig {
+                                *output_text = vig.encrypt(input_text);
+                            }
                         }
-                    }
 
-                    if column[1]
-                        .button("Загрузить шифрованный текст из файла")
-                        .clicked()
-                    {
-                        output_file_read_path_dialog
-                            .open_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                        ui.horizontal(|ui| {
+                            if ui.button("Загрузить...").clicked() {
+                                output_file_read_path_dialog
+                                    .open_single_file(None)
+                                    .expect("Unable to open file_path dialog");
+                            }
 
-                    if column[1]
-                        .button("Сохранить шифрованный текст в файл")
-                        .clicked()
-                    {
-                        output_file_write_path_dialog
-                            .show_save_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                            if ui.button("Сохранить...").clicked() {
+                                output_file_write_path_dialog
+                                    .show_save_single_file(None)
+                                    .expect("Unable to open file_path dialog");
+                            }
+                        });
+                    });
                 })
             }
             EncryptTab::Grille {
@@ -167,168 +165,174 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 let right_key = key.iter().flatten().filter(|t| **t).count() == 4;
-                //.chunks(4).map(|row| row.collect());
-                if ui
-                    .add_enabled(right_key, egui::Button::new("Получить открытый текст"))
-                    .clicked()
-                {
-                    let grille = Grille::new(*key);
-                    let mut chars = output_text
-                        .chars()
-                        .filter(|c| c.is_ascii_alphabetic())
-                        .map(|c| c.to_ascii_uppercase());
 
-                    let mut output = String::new();
-                    'outer: loop {
-                        let mut char_matrix = [[' '; 4]; 4];
-                        for row in &mut char_matrix {
-                            for ch in row {
-                                if let Some(char) = chars.next() {
-                                    *ch = char;
-                                } else {
-                                    break 'outer;
-                                }
-                            }
-                        }
-                        output.push_str(&grille.decrypt(char_matrix));
-                    }
-                    *input_text = output;
-                }
+
+                ui.with_layout(
+                    egui::Layout::right_to_left(egui::Align::TOP).with_main_wrap(true),
+                    |ui| {
+
+                    });
+
                 ui.columns(2, |column| {
-                    column[0].label("Открытый текст");
-                    column[0].text_edit_multiline(input_text);
+                    column[0].group(|ui| {
+                ui.label("Ключ");
+                {
+                    let size = egui::vec2(10.0, 100.0);
+                    let (response, painter) = ui.allocate_painter(size, egui::Sense::click());
 
-                    if column[0]
-                        .button("Загрузить открытый текст из файла")
-                        .clicked()
-                    {
-                        input_file_read_path_dialog
-                            .open_single_file(None)
-                            .expect("Unable to open file_path dialog");
+                    let mut local_click = None;
+                    let rect = response.rect;
+
+                    if response.clicked() {
+                        ui.input(|istate| {
+                            let click_pos = istate.pointer.interact_pos().unwrap();
+                            local_click = Some(click_pos - rect.min);
+                        });
                     }
 
-                    if column[0]
-                        .button("Сохранить открытый текст в файл")
-                        .clicked()
-                    {
-                        input_file_write_path_dialog
-                            .show_save_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                    let side = rect.height().min(rect.width());
+                    let cell_size = side / 4.0 - 7.0;
+                    let cell_step = cell_size + 5.;
 
-                    column[0].label("Ключ");
-                    {
-                        let ui = &mut column[0];
+                    let a = rot_90(key.to_owned());
+                    let b = rot_90(a);
+                    let c = rot_90(b);
+                    let d = rot_90(c);
 
-                        let size = egui::vec2(10.0, 100.0);
-                        let (response, painter) = ui.allocate_painter(size, egui::Sense::click());
+                    if let Some(click_pos) = local_click {
+                        let x = (click_pos.x / cell_step).floor() as usize;
+                        let y = (click_pos.y / cell_step).floor() as usize;
 
-                        let mut local_click = None;
-                        let rect = response.rect;
-
-                        if response.clicked() {
-                            ui.input(|istate| {
-                                let click_pos = istate.pointer.interact_pos().unwrap();
-                                local_click = Some(click_pos - rect.min);
-                            });
-                        }
-
-                        let side = rect.height().min(rect.width());
-                        let cell_size = side / 4.0 - 7.0;
-                        let cell_step = cell_size + 5.;
-
-                        let a = rot_90(key.to_owned());
-                        let b = rot_90(a);
-                        let c = rot_90(b);
-                        let d = rot_90(c);
-
-                        if let Some(click_pos) = local_click {
-                            let x = (click_pos.x / cell_step).floor() as usize;
-                            let y = (click_pos.y / cell_step).floor() as usize;
-
-                            if (0..4).contains(&x) && (0..4).contains(&y) {
-                                let is_disabled = (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
-                                if !is_disabled {
-                                    key[y][x] = !key[y][x];
-                                }
-                            }
-                        }
-
-                        let color = egui::Color32::from_gray(50);
-                        let disabled_color = egui::Color32::from_gray(240);
-                        let stroke = egui::Stroke::new(2.0, color);
-
-                        let rect = rect.translate(vec2(1.0, 1.0));
-
-
-                        for y in 0..4 {
-                            for x in 0..4 {
-                                let mut rect = rect;
-                                rect.set_width(cell_size);
-                                rect.set_height(cell_size);
-                                let rect = rect.translate(egui::vec2(cell_step * x as f32, cell_step * y as f32));
-                                painter.rect_stroke(rect, egui::Rounding::default(), stroke);
-
-                                let is_disabled = (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
-
-                                if key[y][x] {
-                                    painter.rect_filled(rect, egui::Rounding::default(), color);
-                                } else if is_disabled {
-                                    painter.rect_filled(rect, egui::Rounding::default(), disabled_color);
-                                }
+                        if (0..4).contains(&x) && (0..4).contains(&y) {
+                            let is_disabled =
+                                (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
+                            if !is_disabled {
+                                key[y][x] = !key[y][x];
                             }
                         }
                     }
 
-                    if column[1]
-                        .add_enabled(right_key, egui::Button::new("Получить зашифрованный текст"))
-                        .clicked()
-                    {
-                        let grille = Grille::new(*key);
-                        let mut out = String::new();
+                    let color = egui::Color32::from_gray(50);
+                    let disabled_color = egui::Color32::from_gray(240);
+                    let stroke = egui::Stroke::new(2.0, color);
 
-                        for square in input_text
-                            .chars()
-                            .filter(|c| c.is_ascii_alphabetic())
-                            .map(|c| c.to_ascii_uppercase())
-                            .chunks(4 * 4)
-                            .into_iter()
+                    let rect = rect.translate(vec2(1.0, 1.0));
+
+                    for y in 0..4 {
+                        for x in 0..4 {
+                            let mut rect = rect;
+                            rect.set_width(cell_size);
+                            rect.set_height(cell_size);
+                            let rect = rect
+                                .translate(egui::vec2(cell_step * x as f32, cell_step * y as f32));
+                            painter.rect_stroke(rect, egui::Rounding::default(), stroke);
+
+                            let is_disabled =
+                                (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
+
+                            if key[y][x] {
+                                painter.rect_filled(rect, egui::Rounding::default(), color);
+                            } else if is_disabled {
+                                painter.rect_filled(
+                                    rect,
+                                    egui::Rounding::default(),
+                                    disabled_color,
+                                );
+                            }
+                        }
+                    }
+                }
+                    });
+                    column[0].group(|ui| {
+                        ui.label("Открытый текст");
+                        ui.text_edit_multiline(input_text);
+
+                        if ui
+                            .add_enabled(right_key, egui::Button::new("Получить (расшифровать)"))
+                            .clicked()
                         {
-                            let encrypted = grille.encrypt(&square.collect::<String>());
-                            out.push_str(
-                                &encrypted
-                                    .map(|line| {
-                                        line.iter()
-                                            .map(|c| c.to_string())
-                                            .collect::<Vec<_>>()
-                                            .join(" ")
-                                    })
-                                    .join("\n"),
-                            );
-                            out.push_str("\n\n");
+                            let grille = Grille::new(*key);
+                            let mut chars = output_text
+                                .chars()
+                                .filter(|c| c.is_ascii_alphabetic())
+                                .map(|c| c.to_ascii_uppercase());
+
+                            let mut output = String::new();
+                            'outer: loop {
+                                let mut char_matrix = [[' '; 4]; 4];
+                                for row in &mut char_matrix {
+                                    for ch in row {
+                                        if let Some(char) = chars.next() {
+                                            *ch = char;
+                                        } else {
+                                            break 'outer;
+                                        }
+                                    }
+                                }
+                                output.push_str(&grille.decrypt(char_matrix));
+                            }
+                            *input_text = output;
                         }
-                        *output_text = out;
-                    }
-                    column[1].label("Зашифрованный текст");
-                    column[1].text_edit_multiline(output_text);
 
-                    if column[1]
-                        .button("Загрузить шифрованный текст из файла")
-                        .clicked()
-                    {
-                        output_file_read_path_dialog
-                            .open_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                        if ui.button("Загрузить...").clicked() {
+                            input_file_read_path_dialog
+                                .open_single_file(None)
+                                .expect("Unable to open file_path dialog");
+                        }
 
-                    if column[1]
-                        .button("Сохранить шифрованный текст в файл")
-                        .clicked()
-                    {
-                        output_file_write_path_dialog
-                            .show_save_single_file(None)
-                            .expect("Unable to open file_path dialog");
-                    }
+                        if ui.button("Сохранить...").clicked() {
+                            input_file_write_path_dialog
+                                .show_save_single_file(None)
+                                .expect("Unable to open file_path dialog");
+                        }
+                    });
+
+                    column[1].group(|ui| {
+                        ui.label("Зашифрованный текст");
+                        ui.text_edit_multiline(output_text);
+
+                        if ui
+                            .add_enabled(right_key, egui::Button::new("Получить (зашифровать)"))
+                            .clicked()
+                        {
+                            let grille = Grille::new(*key);
+                            let mut out = String::new();
+
+                            for square in input_text
+                                .chars()
+                                .filter(|c| c.is_ascii_alphabetic())
+                                .map(|c| c.to_ascii_uppercase())
+                                .chunks(4 * 4)
+                                .into_iter()
+                            {
+                                let encrypted = grille.encrypt(&square.collect::<String>());
+                                out.push_str(
+                                    &encrypted
+                                        .map(|line| {
+                                            line.iter()
+                                                .map(|c| c.to_string())
+                                                .collect::<Vec<_>>()
+                                                .join(" ")
+                                        })
+                                        .join("\n"),
+                                );
+                                out.push_str("\n\n");
+                            }
+                            *output_text = out;
+                        }
+
+                        if ui.button("Загрузить...").clicked() {
+                            output_file_read_path_dialog
+                                .open_single_file(None)
+                                .expect("Unable to open file_path dialog");
+                        }
+
+                        if ui.button("Сохранить...").clicked() {
+                            output_file_write_path_dialog
+                                .show_save_single_file(None)
+                                .expect("Unable to open file_path dialog");
+                        }
+                    });
                 });
             }
         }
@@ -411,13 +415,17 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-
-    let mut fonts = egui::FontDefinitions::default();
-    fonts.font_data.insert("my_font".to_owned(),
-       egui::FontData::from_static(include_bytes!("../AnonymousPro-Bold.ttf"))); // .ttf and .otf supported
-        fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap()
+        let mut fonts = egui::FontDefinitions::default();
+        fonts.font_data.insert(
+            "my_font".to_owned(),
+            egui::FontData::from_static(include_bytes!("../AnonymousPro-Bold.ttf")),
+        ); // .ttf and .otf supported
+        fonts
+            .families
+            .get_mut(&egui::FontFamily::Proportional)
+            .unwrap()
             .insert(0, "my_font".to_owned());
-    ctx.set_fonts(fonts);
+        ctx.set_fonts(fonts);
         ctx.set_pixels_per_point(2.5);
 
         ctx.set_visuals(eframe::egui::Visuals::light());
