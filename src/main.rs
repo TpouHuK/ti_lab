@@ -1,4 +1,5 @@
 mod rotating_grille;
+use egui::{Mesh, Vec2, vec2};
 use rotating_grille::*;
 
 mod vigener_progressive;
@@ -60,7 +61,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = input_file_write_path_dialog.check() {
-                    std::fs::write(path, &input_text);
+                    std::fs::write(path, &input_text).unwrap();
                 }
 
                 if let Some(Ok(Some(path))) = output_file_read_path_dialog.check() {
@@ -70,7 +71,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = output_file_write_path_dialog.check() {
-                    std::fs::write(path, &output_text);
+                    std::fs::write(path, &output_text).unwrap();
                 }
 
                 let right_key = filter_russian(key.chars()).count() > 0;
@@ -152,7 +153,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = input_file_write_path_dialog.check() {
-                    std::fs::write(path, &input_text);
+                    std::fs::write(path, &input_text).unwrap();
                 }
 
                 if let Some(Ok(Some(path))) = output_file_read_path_dialog.check() {
@@ -162,7 +163,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
 
                 if let Some(Ok(Some(path))) = output_file_write_path_dialog.check() {
-                    std::fs::write(path, &output_text);
+                    std::fs::write(path, &output_text).unwrap();
                 }
 
                 let right_key = key.iter().flatten().filter(|t| **t).count() == 4;
@@ -195,7 +196,7 @@ impl egui_dock::TabViewer for TabViewer {
                 }
                 ui.columns(2, |column| {
                     column[0].label("Открытый текст");
-                    column[0].text_edit_singleline(input_text);
+                    column[0].text_edit_multiline(input_text);
 
                     if column[0]
                         .button("Загрузить открытый текст из файла")
@@ -216,26 +217,68 @@ impl egui_dock::TabViewer for TabViewer {
                     }
 
                     column[0].label("Ключ");
-                    egui::Grid::new("key").show(&mut column[0], |ui| {
+                    {
+                        let ui = &mut column[0];
+
+                        let size = egui::vec2(10.0, 100.0);
+                        let (response, painter) = ui.allocate_painter(size, egui::Sense::click());
+
+                        let mut local_click = None;
+                        let rect = response.rect;
+
+                        if response.clicked() {
+                            ui.input(|istate| {
+                                let click_pos = istate.pointer.interact_pos().unwrap();
+                                local_click = Some(click_pos - rect.min);
+                            });
+                        }
+
+                        let side = rect.height().min(rect.width());
+                        let cell_size = side / 4.0 - 7.0;
+                        let cell_step = cell_size + 5.;
+
                         let a = rot_90(key.to_owned());
                         let b = rot_90(a);
                         let c = rot_90(b);
                         let d = rot_90(c);
 
-                        for i in 0..4 {
-                            for j in 0..4 {
-                                let mut is_enabled = true;
-                                if (a[i][j] || b[i][j] || c[i][j] || d[i][j]) && !(key[i][j]) {
-                                    is_enabled = false;
+                        if let Some(click_pos) = local_click {
+                            let x = (click_pos.x / cell_step).floor() as usize;
+                            let y = (click_pos.y / cell_step).floor() as usize;
+
+                            if (0..4).contains(&x) && (0..4).contains(&y) {
+                                let is_disabled = (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
+                                if !is_disabled {
+                                    key[y][x] = !key[y][x];
                                 }
-                                ui.add_enabled(
-                                    is_enabled,
-                                    egui::Checkbox::without_text(&mut key[i][j]),
-                                );
                             }
-                            ui.end_row();
                         }
-                    });
+
+                        let color = egui::Color32::from_gray(50);
+                        let disabled_color = egui::Color32::from_gray(240);
+                        let stroke = egui::Stroke::new(2.0, color);
+
+                        let rect = rect.translate(vec2(1.0, 1.0));
+
+
+                        for y in 0..4 {
+                            for x in 0..4 {
+                                let mut rect = rect;
+                                rect.set_width(cell_size);
+                                rect.set_height(cell_size);
+                                let rect = rect.translate(egui::vec2(cell_step * x as f32, cell_step * y as f32));
+                                painter.rect_stroke(rect, egui::Rounding::default(), stroke);
+
+                                let is_disabled = (a[y][x] || b[y][x] || c[y][x] || d[y][x]) && !(key[y][x]);
+
+                                if key[y][x] {
+                                    painter.rect_filled(rect, egui::Rounding::default(), color);
+                                } else if is_disabled {
+                                    painter.rect_filled(rect, egui::Rounding::default(), disabled_color);
+                                }
+                            }
+                        }
+                    }
 
                     if column[1]
                         .add_enabled(right_key, egui::Button::new("Получить зашифрованный текст"))
@@ -293,8 +336,8 @@ impl egui_dock::TabViewer for TabViewer {
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         match tab {
-            EncryptTab::Vigener { .. } => "Vigener".into(),
-            EncryptTab::Grille { .. } => "Grille".into(),
+            EncryptTab::Vigener { .. } => "Виженер".into(),
+            EncryptTab::Grille { .. } => "Вращающаяся решётка".into(),
         }
     }
 }
@@ -348,9 +391,9 @@ fn main() -> Result<(), eframe::Error> {
     };
 
     eframe::run_native(
-        "My egui App",
+        "Теория информации #1",
         options,
-        Box::new(|_cc| Box::new(MyApp::default())),
+        Box::new(|_cc| Box::<MyApp>::default()),
     )
 }
 
@@ -368,8 +411,16 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+    let mut fonts = egui::FontDefinitions::default();
+    fonts.font_data.insert("my_font".to_owned(),
+       egui::FontData::from_static(include_bytes!("../AnonymousPro-Bold.ttf"))); // .ttf and .otf supported
+        fonts.families.get_mut(&egui::FontFamily::Proportional).unwrap()
+            .insert(0, "my_font".to_owned());
+    ctx.set_fonts(fonts);
         ctx.set_pixels_per_point(2.5);
 
+        ctx.set_visuals(eframe::egui::Visuals::light());
         egui::CentralPanel::default().show(ctx, |ui| {
             self.tabs.ui(ui);
         });
