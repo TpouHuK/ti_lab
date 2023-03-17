@@ -95,3 +95,33 @@ impl VigenerProgressive {
         text
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn enc_dec_works(s in "\\PC*", k in "\\PC*") {
+            let vig = VigenerProgressive::new(&k);
+                if let Some(vig) = vig {
+                let enc = vig.encrypt(&s);
+                let dec = vig.decrypt(&enc);
+                let enc2 = vig.encrypt(&dec);
+                let dec2 = vig.decrypt(&enc2);
+                prop_assert_eq!(dec, dec2);
+            }
+        }
+
+        /*
+        #[test]
+        fn enc_dec_works_ru(s in "\\p{Cyrillic}*", k in "\\p{Cyrillic}+") {
+            let vig = VigenerProgressive::new(&k).unwrap();
+            let enc = vig.encrypt(&s);
+            let dec = vig.decrypt(&enc);
+            let enc2 = vig.encrypt(&dec);
+            let dec2 = vig.decrypt(&enc2);
+            //prop_assert_eq!(dec, dec2);
+        }*/
+    }
+}

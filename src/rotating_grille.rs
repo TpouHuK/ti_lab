@@ -103,4 +103,73 @@ mod tests {
         ];
         assert_eq!(res, matrix_e);
     }
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn enc_dec_works(s in "\\PC*") {
+            let matrix_s = [
+                [true, false, false, false],
+                [false, true, false, false],
+                [false, false, false, true],
+                [false, false, true, false],
+            ];
+            let grille = Grille::new(matrix_s);
+            let enc = grille.encrypt(&s);
+            let dec = grille.decrypt(enc);
+            let enc2 = grille.encrypt(&dec);
+            let dec2 = grille.decrypt(enc2);
+            prop_assert_eq!(dec, dec2);
+        }
+
+
+        #[test]
+        fn enc_dec_works_100(s in "[A-Z]{16}") {
+            let matrix_s = [
+                [true, false, false, false],
+                [false, true, false, false],
+                [false, false, false, true],
+                [false, false, true, false],
+            ];
+
+            let grille = Grille::new(matrix_s);
+            let enc = grille.encrypt(&s);
+            let enc2 = grille.encrypt(&s);
+            prop_assert_eq!(enc, enc2);
+
+            let dec = grille.decrypt(enc);
+            let dec2 = grille.decrypt(enc2);
+
+            //prop_assert_eq!(dec.clone(), dec2);
+            prop_assert_eq!(s, dec);
+        }
+
+        fn enc_dec_works_any_len(s in "([A-Z]{16})+") {
+            let matrix_s = [
+                [true, false, false, false],
+                [false, true, false, false],
+                [false, false, false, true],
+                [false, false, true, false],
+            ];
+
+            let grille = Grille::new(matrix_s);
+            let mut chars = s.chars();
+
+            let mut output = String::new();
+            'outer: loop {
+                let mut char_matrix = [[' '; 4]; 4];
+                for row in &mut char_matrix {
+                    for ch in row {
+                        if let Some(char) = chars.next() {
+                            *ch = char;
+                        } else {
+                            break 'outer;
+                        }
+                    }
+                }
+                output.push_str(&grille.decrypt(char_matrix));
+            }
+            prop_assert_eq!(s, output);
+        }
+    }
 }

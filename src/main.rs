@@ -1,5 +1,5 @@
 mod rotating_grille;
-use egui::{vec2, Mesh, Vec2};
+use egui::vec2;
 use rotating_grille::*;
 
 mod vigener_progressive;
@@ -166,12 +166,6 @@ impl egui_dock::TabViewer for TabViewer {
 
                 let right_key = key.iter().flatten().filter(|t| **t).count() == 4;
 
-
-                ui.with_layout(
-                    egui::Layout::right_to_left(egui::Align::TOP).with_main_wrap(true),
-                    |ui| {
-
-                    });
 
                 ui.columns(2, |column| {
                     column[0].group(|ui| {
